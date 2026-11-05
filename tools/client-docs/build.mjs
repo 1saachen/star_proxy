@@ -83,8 +83,8 @@ export async function build() {
   const sources = await loadSources();
   const documentVersion = sources.find(page => page.id === 'start').source.match(/^版本：([^\s·]+)/m)?.[1];
   if (!documentVersion) throw new Error('Client API document version is missing');
-  const css = await readFile(path.join(here, 'style.css'), 'utf8');
-  const js = await readFile(path.join(here, 'reader.js'), 'utf8');
+  const css = (await readFile(path.join(here, 'style.css'), 'utf8')).replace(/\r\n/g, '\n');
+  const js = (await readFile(path.join(here, 'reader.js'), 'utf8')).replace(/\r\n/g, '\n');
   const logo = await readFile(path.join(here, 'ruichi-logo.png'));
   const logoUrl = `data:image/png;base64,${logo.toString('base64')}`;
   const headings = new Map();

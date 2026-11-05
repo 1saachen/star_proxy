@@ -9,6 +9,11 @@ import { build, pages, root, escapeHtml, modelCatalog, assetOperations, vegaMate
 import { supplierPageId, supplierGroups } from './supplier-guides.mjs';
 import { modelGuide } from './model-guides.mjs';
 
+test('generated document bytes use platform-independent line endings', async () => {
+  const html = await build();
+  assert.equal(html.includes('\r'), false);
+});
+
 test('domestic Seedance Draft has distinct idempotency keys and no repeated inherited fields', () => {
   const model = modelCatalog.find(item => item.id === 'doubao-seedance-2.5');
   assert.equal(model.capabilities.draft, true);
