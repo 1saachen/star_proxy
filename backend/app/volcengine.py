@@ -66,6 +66,12 @@ class VolcengineClient:
             raise ApiError("服务端尚未配置火山引擎 AK/SK", 503, "upstream_credentials_missing")
         return access_key, secret_key
 
+    def _asset_credentials(self, principal: ApiPrincipal) -> tuple[str, str]:
+        account = self.settings.asset_account_for(principal.id, principal.project_name)
+        if account is None:
+            return self._credentials()
+        return account["access_key_id"].strip(), account["secret_access_key"].strip()
+
     def _signed_request(
         self,
         action: str,
@@ -73,8 +79,9 @@ class VolcengineClient:
         project_name: str | None,
         *,
         host: str = HOST,
+        credentials: tuple[str, str] | None = None,
     ) -> tuple[str, bytes, dict[str, str]]:
-        access_key, secret_key = self._credentials()
+        access_key, secret_key = credentials if credentials is not None else self._credentials()
 
         request_payload = dict(payload)
         if project_name:
@@ -211,7 +218,9 @@ class VolcengineClient:
 
     async def call(self, action: str, payload: dict[str, Any], principal: ApiPrincipal) -> Response:
         started = time.monotonic()
-        url, body, headers = self._signed_request(action, payload, principal.project_name)
+        url, body, headers = self._signed_request(
+            action, payload, principal.project_name, credentials=self._asset_credentials(principal),
+        )
         try:
             upstream = await self._http_client().post(url, content=body, headers=headers)
         except httpx.RequestError as error:

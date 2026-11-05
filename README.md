@@ -155,6 +155,7 @@ uv sync --extra test
 | `DATABASE_PATH` | SQLite持久化位置 |
 | `ADMIN_COOKIE_SECURE` | 本地HTTP设false，生产HTTPS必须true |
 | `VOLCENGINE_ACCESS_KEY / VOLCENGINE_SECRET_KEY` | 素材和真实项目校验，仅服务端使用 |
+| `VOLCENGINE_ASSET_ACCOUNTS_JSON` | 按业务 Key ID 和准确 ProjectName 隔离素材 AK/SK，可选独立火山推理渠道；默认空，其他 Key、供应商、IAM 校验和 TOS 沿用原配置 |
 | `TOS_*` | 文件中转 |
 | `MULTI_PROVIDER_ENABLED` | 模型中转开关，默认false |
 | `PROVIDER_CREDENTIAL_ENCRYPTION_KEY` | 凭证独立主密钥；留空使用持久化密钥文件 |

@@ -2,7 +2,7 @@
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="description" content="星辰平台 API：模型目录、价格、文本、图片、视频、向量、音频与素材接口参考">
-<meta name="source-hash" content="15719a2bcfea2fe1cf65b2b919fc90df78042beec027cfb94a43a4a88be8fea4"><title>星辰平台 · API 接口文档</title><style>:root{color-scheme:light;--ink:#233a34;--muted:#64746e;--line:#ece5dd;--coral:#d94d3e;--warm:#fff8f3;--green:#174f40}
+<meta name="source-hash" content="e6c15a00103d87dde32f1965399df834e5e7ab150fed36e08504134838cfa32e"><title>星辰平台 · API 接口文档</title><style>:root{color-scheme:light;--ink:#233a34;--muted:#64746e;--line:#ece5dd;--coral:#d94d3e;--warm:#fff8f3;--green:#174f40}
 /* Keep the supplied portrait logo intact, including its wordmark. */
 .topbar .brand-mark{width:32px;height:48px;flex:0 0 32px;border-radius:0;background:transparent}.brand-mark img{display:block;width:100%;height:100%;object-fit:contain}
 *{box-sizing:border-box}html{scroll-padding-top:94px}body{margin:0;background:#fff;color:var(--ink);font:15px/1.8 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}a{color:var(--green);text-decoration:none}a:hover{text-decoration:underline}button,input{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,pre:focus-visible,.table-wrap:focus-visible{outline:3px solid #f4a48c;outline-offset:3px}button{border:1px solid var(--line);border-radius:12px;background:white;padding:7px 13px;color:var(--ink);font-size:12px;font-weight:650}button:hover{background:var(--warm)}
@@ -113,6 +113,8 @@ body{font-size:14px;color:#283044}.topbar{height:66px;padding:0 24px;backdrop-fi
 <main id="main" tabindex="-1"><div class="breadcrumb">开发者文档 <span>/</span> <span id="current-page">快速开始</span></div><noscript><p>当前已展示全部文档；启用 JavaScript 后可使用分类导航、搜索和代码复制。</p></noscript><article class="docs-page" id="start" data-kind="reference" data-label="快速开始"><h1 id="start--星辰平台-api-文档">星辰平台 API 文档</h1>
 <p>版本：6.4.0 · 更新日期：2026-10-23</p>
 <p>统一调用文本、图片、视频、向量和音频模型，并管理项目素材。正式地址：<code>https://api.richbest.cn</code>。</p>
+<p>素材账号由服务端按已认证业务 Key 的 ID 和项目选择，客户请求不能覆盖该选择。未配置隔离项的 Key 保持原账号。若隔离项与 Key 所属项目不一致，接口返回 <code>503 asset_account_scope_mismatch</code>，不会回退到其他账号。此项默认不改变生成渠道，也不改变 TOS、Key 额度或已有接口字段；服务端迁移账号时须同时准备素材 ID 映射，旧账号 ID 不会自动转换。</p>
+<p>管理员可同时为该 Key 指定独立的火山推理渠道，仅对其新请求生效；已有任务保留原渠道，其他 Key 和供应商保持原样。指定渠道不可用时返回 <code>503 account_channel_unavailable</code>。客户仍使用原业务 Key 与原接口，无需传入账号或渠道选择参数。</p>
 <p>你只需要管理员签发的业务 API Key。需要使用哪个模型，请联系管理员为项目开通；项目下现有有效 Key 无需重新签发。可用型号及能力以 <code>/v1/models</code> 为准，人民币税前价目以 <code>/v1/pricing</code> 为准。</p>
 <p><a href="#start">HTML 阅读版</a> · <a href="#models--模型与接口对照表">模型与接口对照表</a> · <a href="#errors">错误与安全重试</a></p>
 <p>国内 <code>doubao-seedance-2.5</code> 新增 <a href="#videos--seedance-25-draft样片转成片">Draft 样片转成片</a>：通过同一创建接口先生成 480p 样片，选定后引用本站样片 ID 生成 1080p 成片；两次调用分别记录真实 Token 用量。是否已开通以 <code>/v1/models</code> 的 <code>draft</code> 能力为准，BytePlus、ModelTop 和 Vega 不自动支持此流程。</p>

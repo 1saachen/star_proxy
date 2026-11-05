@@ -754,7 +754,7 @@ def test_byteplus_project_discount_uses_the_seeded_official_prices(tmp_path: Pat
                 (
                     "usage-byteplus-1", "request-byteplus-1", key_id, "drama_prod",
                     "dreamina-seedance-2.0-mini", "byteplus-channel", "succeeded", 1_000_000,
-                    854, 480, "2026-10-14 10:41:05", "2026-10-14 10:41:05",
+                    854, 480, f"{month}-14 10:41:05", f"{month}-14 10:41:05",
                 ),
             )
         asyncio.run(billing.reconcile())

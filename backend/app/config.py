@@ -1,3 +1,4 @@
+import json
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -7,10 +8,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore", hide_input_in_errors=True)
 
     volcengine_access_key: str = ""
     volcengine_secret_key: str = ""
+    # Optional, server-only asset-account overrides by business API Key ID.
+    # Whole JSON is SecretStr so diagnostics never expose its AK/SK contents.
+    volcengine_asset_accounts_json: SecretStr | None = None
     multi_provider_enabled: bool = False
     provider_credential_encryption_key: SecretStr | None = None
     tos_access_key: str = ""
@@ -67,6 +71,35 @@ class Settings(BaseSettings):
     model_stream_idle_timeout_seconds: float = Field(default=300.0, gt=0, le=3600)
     model_write_timeout_seconds: float = Field(default=120.0, gt=0, le=300)
     model_image_max_inflight: int = Field(default=16, ge=1, le=128)
+
+    @field_validator("volcengine_asset_accounts_json")
+    @classmethod
+    def validate_asset_accounts(cls, value: SecretStr | None) -> SecretStr | None:
+        if value is None or not value.get_secret_value().strip():
+            return None
+        try:
+            accounts = json.loads(value.get_secret_value())
+            valid = isinstance(accounts, dict) and all(
+                isinstance(key_id, str) and bool(key_id.strip())
+                and isinstance(account, dict)
+                and {"project_name", "access_key_id", "secret_access_key"}.issubset(account)
+                and set(account).issubset({"project_name", "access_key_id", "secret_access_key", "inference_channel_id"})
+                and all(isinstance(field, str) and bool(field.strip()) for field in account.values())
+                for key_id, account in accounts.items()
+            )
+        except (ValueError, TypeError):
+            valid = False
+        if not valid:
+            raise ValueError("asset accounts require project_name/access_key_id/secret_access_key and optional inference_channel_id")
+        return value
+
+    def asset_account_for(self, key_id: str, project_name: str) -> dict[str, str] | None:
+        configured = self.volcengine_asset_accounts_json
+        account = json.loads(configured.get_secret_value()).get(key_id) if configured else None
+        if account is not None and account["project_name"] != project_name:
+            from .errors import ApiError
+            raise ApiError("素材账号配置与业务 Key 的项目不一致", 503, "asset_account_scope_mismatch")
+        return account
 
     @field_validator("system_monitor_path", mode="before")
     @classmethod

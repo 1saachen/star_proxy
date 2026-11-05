@@ -711,6 +711,24 @@ class ProviderRelay:
                 """,
                 (principal.project_name, principal.project_name, alias),
             ).fetchone()
+            if row is not None and row["provider"] == "volcengine_ark":
+                account = self.settings.asset_account_for(principal.id, principal.project_name)
+                channel_id = account.get("inference_channel_id") if account else None
+                if channel_id:
+                    override = connection.execute(
+                        "SELECT c.provider,c.id AS channel_id,c.name AS channel_name,c.config_json,"
+                        "pc.id AS credential_id,pc.secret_ciphertext FROM provider_channels c "
+                        "JOIN provider_credentials pc ON pc.channel_id=c.id AND pc.status='active' "
+                        "WHERE c.id=? AND c.project_name=? AND c.provider='volcengine_ark' "
+                        "AND c.status='active' AND c.deleted_at IS NULL",
+                        (channel_id, principal.project_name),
+                    ).fetchone()
+                    if override is None:
+                        raise ApiError("当前 Key 的火山账号渠道不可用", 503, "account_channel_unavailable")
+                    # Default project bindings and other Keys are untouched.
+                    # Tasks persist this exact channel/credential; _task_route
+                    # deliberately keeps using the stored pair after a switch.
+                    row = {**dict(row), **dict(override)}
         if row is None:
             raise ApiError("当前项目未启用该模型或渠道不可用", 403, "model_not_allowed")
         secret = self.vault.decrypt(row["secret_ciphertext"])

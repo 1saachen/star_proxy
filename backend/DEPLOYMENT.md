@@ -11,6 +11,12 @@
 - `ADMIN_COOKIE_SECURE=true`
 - `CORS_ORIGINS=https://你的用户门户域名`
 
+单个客户迁移素材账号时，可在部署 Secret 中配置 `VOLCENGINE_ASSET_ACCOUNTS_JSON`：以业务 Key **ID**（不是 Bearer 原文）为键，每项包含准确的 `project_name`、`access_key_id`、`secret_access_key`。配置整体按 Secret 处理；示例结构见 `.env.example`，不得把真实 JSON 写入文档、镜像或日志。未列出的 Key 继续使用全局 AK/SK；项目不匹配则拒绝调用，不回退。空配置保持旧行为，IAM 项目校验、TOS 凭据和模型推理渠道不受此项影响。
+
+这是显式账号切换，不会转换旧素材 ID。启用前先在新账号预上传并验收素材，准备业务库中旧 ID 到新 ID 的映射、仍在处理任务的恢复路径及配置备份。只有目标 Key 的素材绑定与新账号一致时才启用；其他 Key 和项目不迁移。回退须同时恢复目标映射与隔离配置，保留旧云端资源和旧凭据；不要用旧数据库整库覆盖切换后新增的业务记录。
+
+若该 Key 的火山推理也要换账号，先在同一项目新建独立的 `volcengine_ark` 渠道，将新 Ark Key 存入既有加密凭证库，再在该隔离项中填写可选的 `inference_channel_id`。只影响该 Key 新提交的火山调用；其他 Key、其他供应商以及项目默认渠道不变，已有任务继续使用其已保存的渠道/凭据。渠道缺失、停用、跨项目或供应商不符时返回 `503 account_channel_unavailable`，不回退。禁止直接轮换共享渠道来代替按 Key 迁移。
+
 多供应商模型中转默认关闭。设置 `MULTI_PROVIDER_ENABLED=true` 后，如果没有通过部署 Secret 提供 `PROVIDER_CREDENTIAL_ENCRYPTION_KEY`，服务会在 SQLite 同目录自动生成 `provider_credentials.key` 并在后续启动时自动加载。该密钥不得复用 `ADMIN_TOTP_ENCRYPTION_KEY`，不得写入仓库、镜像或日志。生产环境仍推荐使用部署 Secret；使用自动密钥文件时必须确认数据库目录位于持久卷。SQLite 备份只包含供应商凭证密文，不包含主密钥；灾备时必须分开保管并同时恢复，否则已有渠道凭证无法解密。
 
 生产环境保持 `ENABLE_API_DOCS=false`。所有火山凭证只存在此服务器的环境变量中。管理员不再使用共享万能令牌，环境中不应继续配置 `CONSOLE_ADMIN_TOKEN`。
